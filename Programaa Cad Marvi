@@ -1,0 +1,81 @@
+from tkinter import *
+import sqlite3
+from datetime import datetime, timedelta
+import tkinter as tk
+from tkinter import ttk
+from tkinter import messagebox
+import pip
+from Producto import Producto
+from Ventana import Ventana
+
+
+class VentanaNotificacion:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("Notificación de Próximas Caducidades")
+        self.master.geometry("400x200")
+
+        self.label = tk.Label(master, text="¡Alerta de Próximas Caducidades!")
+        self.label.pack()
+
+        # Obtener los próximos productos a caducar
+        self.productos_caducar = self.obtener_proximos_productos()
+
+        # Mostrar los próximos productos a caducar en la ventana de notificación
+        self.mostrar_productos_caducar()
+
+        # Botón para cerrar la ventana de notificación
+        self.btn_cerrar = tk.Button(master, text="Cerrar", command=self.cerrar_ventana)
+        self.btn_cerrar.pack()
+
+    def obtener_proximos_productos(self):
+        # Conectar a la base de datos
+        conn = sqlite3.connect('base_caducidad.db')
+        cursor = conn.cursor()
+
+        # Obtener la fecha actual y la fecha límite (3 meses en el futuro)
+        fecha_actual = datetime.now()
+        fecha_limite = fecha_actual + timedelta(days=3*60)
+
+        # Consultar los productos cuya fecha de caducidad esté dentro del período de 3 meses
+        consulta_sql = "SELECT producto, fecha_caducidad FROM productos WHERE fecha_caducidad BETWEEN ? AND ?"
+
+# Ejecutar la consulta SQL con los parámetros y obtener los resultados
+        cursor.execute(consulta_sql, (fecha_actual, fecha_limite))
+        productos_caducar = cursor.fetchall()
+
+        for producto, fecha_caducidad in productos_caducar:
+            print(f"Producto:{producto}, Fecha de caducidad: {fecha_caducidad}")
+        
+        # Cerrar la conexión a la base de datos
+        conn.close()
+
+        return productos_caducar
+
+    def mostrar_productos_caducar(self):
+        # Mostrar los próximos productos a caducar en la ventana de notificación
+        for producto, fecha_caducidad in self.productos_caducar:
+            lbl_producto = tk.Label(self.master, text=f"{producto} - Caduca el {fecha_caducidad}")
+            lbl_producto.pack()
+
+    def cerrar_ventana(self):
+        self.master.destroy()
+
+def mostrar_notificacion_caducidades():
+    root = tk.Tk()
+    notificacion = VentanaNotificacion(root)
+    root.mainloop()
+
+if __name__ == "__main__":
+    mostrar_notificacion_caducidades()
+
+def main():
+    root = Tk()
+    root.wm_title("Caducidades")
+    app = Ventana(root)
+    app.mainloop()
+
+if __name__ == "__main__":
+    root = Tk()
+    app = Ventana(root)
+    app.mainloop()
